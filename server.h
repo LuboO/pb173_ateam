@@ -69,7 +69,8 @@ public:
 	* @return returns zero when succesful, nonzero value otherwise
 	*/
 	int randGenRSA(unsigned char* publicKey , unsigned char* privateKey);
-		/**
+
+	/**
 	* Encrypts/decrypts given data with AES - 128.
 	* 
 	* @param key 128 bit long key
@@ -152,4 +153,4 @@ public:
 	int startClientCommunication(std::string fromC, std::string toClient);
 };
 
-#endif
+#endif //SERVER_H

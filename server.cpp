@@ -20,7 +20,8 @@ string Server::generatePassword()//toto raz bude geneerovat anhodne hesla.. zati
 	return "heslo";
 }
 
-int Server::registration(std::string login , std::string pwd , cert* userCert) //odpoved na jednotlive klientske requesty toto konkretne o registraciu. tato a jej podobne funkcie su volane zo statickej metody answer ktoru najdes v maine
+//odpoved na jednotlive klientske requesty toto konkretne o registraciu. tato a jej podobne funkcie su volane zo statickej metody answer ktoru najdes v maine
+int Server::registration(std::string login , std::string pwd , cert* userCert) 
 {
 	cout <<"Klient "<<login<<" sa pokusa zaregistrovat\n";
 	if (getUser(login)!=NULL) {cout<< "Neuspesne, taky login uz je zaregistrovany\n"; return 1;}
@@ -28,7 +29,9 @@ int Server::registration(std::string login , std::string pwd , cert* userCert) /
 	cout << "Registracia prebehla uspesne\n";
 	return 0;
 }
-User* Server::getUser(std::string login) // pomocne metody notner aby sa dalo rozumne pracovat podla loginu vratia usera
+
+// pomocne metody notner aby sa dalo rozumne pracovat podla loginu vratia usera
+User* Server::getUser(std::string login) 
 {
 	if (registeredUsers.empty()) return NULL;
 	list<User*>::iterator iter;
@@ -48,7 +51,9 @@ User* Server::getOnlineUser(std::string login)
 	}
 	return NULL;
 }
-int Server::login(std::string login,std::string password, int port) // dalsia obsluzna metoda
+
+ // dalsia obsluzna metoda
+int Server::login(std::string login,std::string password, int port) 
 {
 	cout << "uzivatel " <<login <<" sa pokusa prihlasit\n";
 	User* u = getOnlineUser(login);
@@ -65,17 +70,18 @@ int Server::login(std::string login,std::string password, int port) // dalsia ob
 string Server::sendlist(std::string login)
 {
 	User* u = getOnlineUser(login);
-	if (!u) {cout << "dany uzivatel nie je prihlaseny, nemozno mu poslat zoznam online klientov\n"; return "NOK:chyba!nieste prihlaseny\nn";}
+	if (!u) {cout << "dany uzivatel nie je prihlaseny, nemozno mu poslat zoznam online klientov\n"; return "NOK:Sorry, you have to login first.";}
 	string result = "";
-	if (onlineUsers.size()<=1){cout << "zozname online klientov nebsahuje nikoho vhodneho\n"; return "NOK:smola,nie je s kym komunikovat\n";}
+	if (onlineUsers.size()<=1){cout << "zozname online klientov nebsahuje nikoho vhodneho\n"; return "NOK:There are no users online.";}
 	list<User*>::iterator iter;
 	for(iter = onlineUsers.begin();iter!=onlineUsers.end();iter++)
 	{
-		if (iter!=onlineUsers.begin()) result +=":";
+		if (iter!=onlineUsers.begin() && (*iter)->login!=login) result +=":";
 		if ((*iter)->login!=login) result+=(*iter)->login;
 	}
 	return result;
 }
+
 int Server::startClientCommunication(std::string fromC, std::string toC)
 {
 	cout << "klient " << fromC << " sa pokusa nadviazat komunikaciu s klinetom " << toC <<endl;
@@ -86,7 +92,8 @@ int Server::startClientCommunication(std::string fromC, std::string toC)
 	SocketClient* partnerClientSocket;
 	try{
 		cout << "pokusam sa nadviazat komunikaciu s klientom "<<toC <<" na porte "<<t->port<<endl;
-		partnerClientSocket = new SocketClient("127.0.0.1" , t->port); // pokus o nasdviazanie komunikacie s vyziadanym klientomn posielam mu hlavne port klienta ktory s nim chce komunikovat aby sa mu mal ako ozvat
+		// pokus o nasdviazanie komunikacie s vyziadanym klientomn posielam mu hlavne port klienta ktory s nim chce komunikovat aby sa mu mal ako ozvat
+		partnerClientSocket = new SocketClient("127.0.0.1" , t->port);
 		stringstream toSend("");
 		toSend << "COMM";
 		toSend << ":";
@@ -100,5 +107,28 @@ int Server::startClientCommunication(std::string fromC, std::string toC)
 		partnerClientSocket = NULL;
 	}
 	
+	return 0;
+}
+
+int Server::logout(std::string login){
+	cout << "User "<<login <<" wants to logout.\n";
+	User* u = getUser(login);
+	if (!u) {cout << "User is not registered.\n"; return -1;}
+	u = getOnlineUser(login);
+	if (!u) {cout << "User is already disconnected.\n";return -1;}
+
+	
+	for(std::list<User*>::iterator i = onlineUsers.begin(); i != onlineUsers.end() ; i++){
+		if((*i) == u){
+			delete *i;
+			i = onlineUsers.erase(i);
+
+			if(i == onlineUsers.end()){
+				break;	
+			}
+		}
+	}
+
+	cout << "Logout succesful\n";
 	return 0;
 }

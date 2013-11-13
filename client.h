@@ -3,11 +3,10 @@
 
 #include <iostream>
 #include <string>
-#include <list>
-
 #include <afxwin.h>
-#include "aes.h"
 
+
+#include "polarssl/aes.h"
 #include "socket.h"
 #include "struct.h"
 //#include "minunit.h"
@@ -24,10 +23,21 @@ struct adress{
 
 class Client{
 public:
-	bool communication;
 	SocketClient* activePartnerSocket;
+	SocketClient* activeServerSocket;// premenna sluzi na to aby som mohls v lubovolnej metode ked uz som sa rraz na server nepojila mohla s nim komunikovat
+	std::string partnerName;
+	int port;
+	bool incomingConnection;
+	unsigned char encBuffer[1000];
+	unsigned char decBuffer[1000];
+	int getPointerEnc;
+	int putPointerEnc;
+	int counterEnc;
+	int getPointerDec;
+	int putPointerDec;
+	int counterDec;
 private:
-
+	
 	unsigned char publicKey[128];
 	unsigned char privateKey[128];
 	unsigned char symKey[32];
@@ -38,9 +48,8 @@ private:
 	cert partnerCert;
 	adress myAdress;
 	adress partnerAdress;
-	SocketClient* activeServerSocket;// premenna sluzi na to aby som mohls v lubovolnej metode ked uz som sa rraz na server nepojila mohla s nim komunikovat
-
-	int port;
+	
+	
 	bool stop;
 public:
 	Client(string login);
@@ -55,7 +64,7 @@ public:
 	*
 	* @return returns zero when succesful, nonzero value otherwise
 	*/
-	int cryptoSym(std::string, unsigned char[16], std::string, std::string&, int );
+	int cryptoSym(std::string, unsigned char iv[16], std::string data, std::string& outData, int mode);
 
 	/**
 	* Encrypts/decrypts given data with RSA - 1024.
@@ -148,13 +157,16 @@ public:
 	* @return returns zero when succesful, nonzero value otherwise
 	*/
 	int certificateRequest(requestType rt , personInfo PI);
-
+	
 	/*int connectTo(std::string IP, int port);
 	int receiveData(char* buff, int len);
 	int endSocket();*/
 	int listRequest();
 	int communicationRequest(std::string);
+	int logoutRequest();
 //static	UINT clientWaiting(LPVOID a);
+	std::string encipher(std::string text);
+	std::string decipher(std::string text);
 };
 
 
