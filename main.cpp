@@ -1,26 +1,9 @@
-//v prvom rade treba vyriesit preco mi komunikacia medzi klientami blbne... vyzera ze sa tam posiela nejaky riadok navyse. skus si to spustiti ako jeden program 
-//ako server a dvoch klientov obobch zaregistruj,prihlas a jednym sa pokus skontaktovat toho druheho... v jednom klientovi ti vypadne nieco ako ak chcete potvrdit 
-//komunikaciu stlacte a. tu teba stalit a dvakrat.. to je ten problem co som riesilôa so svendom s tym cin.get() mozes to popripade toto potvrdenie cele zrusit.
-
-//dalej treba dokoncit tenr logout. ja ho nemam nie preto ze by samotny logout bol problem ale kedze som nevyriesila ako ukoncit komunikaciu medzi klientami tak som sa venovala 
-//tomu.. asi skus normalne do mainu pridat moznost ze ked klient nieco stlaci tak sa posle logout request.
-
-//treba vymysliet ako sa bude dat skoncit komunikacia medzi klientami najrozumnejsie bude asi zaviest nejaky fixnz retazec ktory sa neposle ale vzdy sa nan bude testovat a ked sa 
-//objavi komunikacia sa ukonci. co znamena ze sa prerusiten nekonecny while cyklus snedline-ov a receiveline-ov
-
-//dalej v maine je to riesene tak ze klient ma atribut komunicacion ktory ked je zapnuty tak sa prerusi ten hlavny cyklus co vypisuje "ak sa chces prihlasit stlac p, ak registrovat 
-//stlac r, ak komunikovat stlacte k\n" problem je ze on sa uplne zrusi a aj ked by sa komunikacia ukoncila tak uz sa neda vpoddstate nic robit.. takze to treba este vyriesit.
-
-
-//volitelne sa da este prerobit ta vec s globalnymi premmnymi ak si pocuival a pametas si moj rozhovor so svendom.. ze by sa vlaknobvej funkcii nepredaval len ten socket ale 
-//trebars struktura ktorA  by obsahovala este aj ukazatel na naseho klienta alebo na ans server.. podla toho co je potreba.. toto nie je az tak nutne kvoli funkcnosti.. 
-//len by sme zrusili globalne premenne a teda si trosku skrajsili kod.
 
 #include <iostream>
 #include "server.h"
 #include "client.h"
 
-Server* myServer;//globalne premenne ktore som pouzila kvoli tomu ze vlaknova funkcia ma byt staticka
+Server* myServer;
 Client* myClient;
 unsigned int pre_generatingKeyEnc(void* s)
 {
@@ -36,7 +19,8 @@ unsigned int pre_generatingKeyEnc(void* s)
 	aes_context ctx;
 	while(true)
 	{
-		if(((k->putPointerEnc>k->getPointerEnc) &&  ((k->putPointerEnc +16)>1000) && (((k->putPointerEnc +16)%1000)>k->getPointerEnc)) || ((k->putPointerEnc<k->getPointerEnc)&&((k->putPointerEnc + 16)>k->getPointerEnc)) || k->putPointerEnc == k->getPointerEnc)
+		
+		if (k->getPointerEnc<984)
 	{
 		for(int i = 15;i>=0;i--)
 		{
@@ -45,11 +29,20 @@ unsigned int pre_generatingKeyEnc(void* s)
 			x = x/256;
 		}
 		aes_setkey_enc(&ctx, key, 128);
-		aes_crypt_ecb(&ctx,AES_ENCRYPT,input,k->encBuffer+k->putPointerEnc);
+		unsigned char output[16];
+		aes_crypt_ecb(&ctx,AES_ENCRYPT,input,output);
+		for(int i = 0;i<16;i++)
+		{
+			k->encBuffer[(k->putPointerEnc+i)%1000] = output[i];
+		}
 		k->counterEnc++;
-		k->putPointerEnc++;
+		k->putPointerEnc+=16;
+		k->putPointerEnc = k->putPointerEnc % 1000;
+		k->getPointerEnc+=16;
+		cout << k->getPointerEnc<<endl;
 	}
-		if(((k->putPointerDec>k->getPointerDec) &&  ((k->putPointerDec +16)>1000) && (((k->putPointerDec +16)%1000)>k->getPointerDec)) || ((k->putPointerDec<k->getPointerDec)&&((k->putPointerDec + 16)>k->getPointerDec)) || k->putPointerDec == k->getPointerDec)
+		
+		if(k->getPointerDec<984)
 	{
 		for(int i = 15;i>=0;i--)
 		{
@@ -58,9 +51,16 @@ unsigned int pre_generatingKeyEnc(void* s)
 			x = x/256;
 		}
 		aes_setkey_enc(&ctx, key, 128);
-		aes_crypt_ecb(&ctx,AES_ENCRYPT,input,k->decBuffer+k->putPointerDec);
+		unsigned char output[16];
+		aes_crypt_ecb(&ctx,AES_ENCRYPT,input,output);
+		for(int i = 0;i<16;i++)
+		{
+			k->decBuffer[(k->putPointerDec+i)%1000] = output[i];
+		}
 		k->counterDec++;
-		k->putPointerDec++;
+		k->putPointerDec+=16;
+		k->putPointerDec = k->putPointerDec % 1000;
+		k->getPointerDec+=16;
 	}
 	}
 	return 0;
